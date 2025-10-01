@@ -11,6 +11,8 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+import java.util.Arrays;
+
 @Configuration
 public class SecurityConfig {
     @Bean
@@ -25,14 +27,23 @@ public class SecurityConfig {
                         cors -> cors.configurationSource(corsConfigurationSource())
                 ).build();
     }
-}
 
-
-private CorsConfigurationSource corsConfigurationSource() {
-    return new CorsConfigurationSource() {
-        @Override
-        public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
-            return null;
-        }
+    private CorsConfigurationSource corsConfigurationSource() {
+        return new CorsConfigurationSource() {
+            @Override
+            public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
+                CorsConfiguration corsConfiguration = new CorsConfiguration();
+                corsConfiguration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+                corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                corsConfiguration.setAllowedHeaders(Arrays.asList("*"));
+                corsConfiguration.setAllowCredentials(true);
+                corsConfiguration.setExposedHeaders(Arrays.asList("*"));
+                corsConfiguration.setExposedHeaders(Arrays.asList("Authorization"));
+                corsConfiguration.setMaxAge(3600L);
+                return corsConfiguration;
+            };
+        };
     }
 }
+
+

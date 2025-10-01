@@ -1,0 +1,190 @@
+Parfait 👍 Je vais t’analyser ton système pas à pas pour que tu comprennes **clairement** ce que fait ton code.
+Ton projet utilise **Spring Security + JWT** pour sécuriser une API.
+
+---
+
+## 1. Classe `SecurityConfig`
+
+C’est la **configuration de sécurité principale** de ton application.
+
+```java
+@Configuration
+public class SecurityConfig {
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+```
+
+👉 Ici, tu définis les règles de sécurité que Spring doit appliquer.
+
+### a. Gestion des sessions
+
+```java
+http.sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+```
+
+➡️ `STATELESS` = pas de session côté serveur (pas de cookie de session).
+Chaque requête doit fournir un **JWT valide**.
+
+---
+
+### b. Règles d’accès
+
+```java
+.authorizeHttpRequests(authorize -> authorize
+    .requestMatchers("/api/**").authenticated()
+    .requestMatchers("/api/super-admin/**").hasRole("ADMIN")
+    .anyRequest().permitAll()
+)
+```
+
+➡️ Les règles :
+
+* `/api/**` → doit être authentifié (avoir un JWT valide).
+* `/api/super-admin/**` → doit être authentifié **et** avoir le rôle **ADMIN**.
+* Le reste (`anyRequest()`) → accessible à tout le monde.
+
+---
+
+### c. Ajout d’un filtre
+
+```java
+.addFilterBefore(new JwtValidator(), BasicAuthenticationFilter.class)
+```
+
+➡️ Tu ajoutes un filtre perso (`JwtValidator`) qui lit et valide le **JWT** avant le filtre d’authentification de Spring.
+
+---
+
+### d. CSRF et CORS
+
+```java
+.csrf(AbstractHttpConfigurer::disable)
+.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+```
+
+* `csrf` désactivé (utile car tu bosses en REST API).
+* `corsConfigurationSource()` → autorise uniquement `http://localhost:5173` (ton front React sûrement).
+
+---
+
+## 2. Classe `JwtValidator`
+
+C’est ton **filtre JWT**, qui hérite de `OncePerRequestFilter` (donc exécuté **une fois par requête**).
+
+```java
+String jwt = request.getHeader(JwtConstant.JWT_HEADER);
+```
+
+➡️ Récupère le header `Authorization`.
+
+Si le token existe :
+
+1. Il enlève le préfixe `Bearer ` avec `jwt.substring(7)`.
+2. Il vérifie et décode le JWT avec la clé secrète.
+3. Récupère les infos :
+
+   * `email` du user
+   * `authorities` (rôles sous forme de string séparés par virgules).
+4. Transforme ça en **objet Authentication** :
+
+   ```java
+   Authentication auth = new UsernamePasswordAuthenticationToken(email, null, auths);
+   SecurityContextHolder.getContext().setAuthentication(auth);
+   ```
+
+   👉 Maintenant Spring sait **qui est connecté** et ses **rôles**.
+
+Si problème → `BadCredentialsException("Invalid JWT token")`.
+
+---
+
+## 3. Classe `JwtProvided`
+
+C’est le **service qui génère les JWT**.
+
+### a. Génération de token
+
+```java
+public String generateToken(Authentication authentication) {
+    Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+    String roles = populateAuthorities(authorities);
+
+    return Jwts.builder()
+            .issuedAt(new Date())
+            .expiration(new Date(new Date().getTime()+ 86400000)) // 1 jour
+            .claim("email", authentication.getName())
+            .claim("authorities", roles)
+            .signWith(key)
+            .compact();
+}
+```
+
+➡️ Le token contient :
+
+* `email`
+* `authorities` (les rôles, genre `"ROLE_USER,ROLE_ADMIN"`)
+* une date d’expiration (24h).
+
+---
+
+### b. Extraction email depuis le token
+
+```java
+public String getEmailFromToken(String jwt) { ... }
+```
+
+➡️ Récupère uniquement la claim `email` depuis un token.
+
+---
+
+### c. Méthode utilitaire
+
+```java
+private String populateAuthorities(Collection<? extends GrantedAuthority> authorities)
+```
+
+➡️ Convertit une liste de rôles en une string séparée par des virgules.
+
+---
+
+## 4. Classe `JwtConstant`
+
+```java
+public class JwtConstant {
+    public static final String JWT_SECRET= "rhzfiozehfezfhzeifohdhfiizohfeiohzidfhoizehfi";
+    public static final String JWT_HEADER = "Authorization";
+}
+```
+
+➡️ Contient :
+
+* la **clé secrète** pour signer et vérifier les tokens (⚠️ en prod → jamais en clair dans le code, utilise un fichier de config ou variable d’environnement).
+* le nom du header → `"Authorization"`.
+
+---
+
+## 🔎 Résumé global
+
+Ton système fonctionne comme ça :
+
+1. **Un utilisateur se connecte** (via login classique) → Spring génère un **JWT** avec `JwtProvided`.
+2. Le front stocke ce token (souvent dans `localStorage`) et l’envoie dans les requêtes avec le header :
+
+   ```
+   Authorization: Bearer <JWT>
+   ```
+3. À chaque requête sur `/api/**`, ton filtre `JwtValidator` :
+
+   * lit le header,
+   * valide la signature et la date,
+   * extrait email + rôles,
+   * stocke ça dans `SecurityContextHolder` pour que Spring sache qui fait la requête.
+4. Spring Security applique les règles :
+
+   * `/api/**` → besoin d’un JWT valide,
+   * `/api/super-admin/**` → JWT valide **et** rôle ADMIN,
+   * autres → public.
+
+---
+
+Veux-tu que je te fasse un **schéma de fonctionnement (flowchart)** de tout le cycle (connexion → génération → validation du JWT) pour que ce soit encore plus clair visuellement ?
