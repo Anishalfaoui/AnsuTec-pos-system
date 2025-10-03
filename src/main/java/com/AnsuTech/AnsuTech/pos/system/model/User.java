@@ -15,7 +15,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class User {
+
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @Column(nullable = false)
@@ -29,6 +31,7 @@ public class User {
     @Column(nullable = false)
     private UserRole role;
 
+    @Column(nullable = false)
     private String password;
 
     private LocalDateTime lastLoginAt;
