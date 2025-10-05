@@ -11,6 +11,7 @@ import com.AnsuTech.AnsuTech.pos.system.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -32,22 +33,49 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductDto updateProduct(Long id, ProductDto productDto, User user) {
-        return null;
+    public ProductDto updateProduct(Long id, ProductDto productDto, User user) throws Exception {
+        Product product = productRepository.findById(id).orElseThrow(
+                ()-> new Exception("product not found")
+        );
+        product.setName(productDto.getName());
+        product.setDescription(productDto.getDescription());
+        product.setSku(productDto.getSku());
+        product.setImage(productDto.getImage());
+        product.setMrp(productDto.getMrp());
+        product.setSellingPrice(productDto.getSellingPrice());
+        product.setBrand(productDto.getBrand());
+        product.setUpdatedAt(productDto.getUpdatedAt());
+        Product savedProduct = productRepository.save(product);
+
+        return ProductMapper.toDto(savedProduct);
     }
 
     @Override
-    public void deleteProduct(Long id, User user) {
+    public void deleteProduct(Long id, User user) throws Exception {
+        Product product = productRepository.findById(id).orElseThrow(
+                () -> new Exception("Product not found")
+        );
+        productRepository.delete(product);
 
     }
 
     @Override
     public List<ProductDto> getProductsByStoreId(Long storeId) {
-        return List.of();
+        List<Product> products = productRepository.findByStoreId(storeId);
+        List<ProductDto> productDtos = new ArrayList<>();
+        for (Product product : products) {
+            productDtos.add(ProductMapper.toDto(product));
+        }
+        return productDtos;
     }
 
     @Override
     public List<ProductDto> searchByKeyword(Long storeId, String keyword) {
-        return List.of();
+        List<Product> products = productRepository.searchByKeyword(storeId, keyword);
+        List<ProductDto> productDtos = new ArrayList<>();
+        for (Product product : products) {
+            productDtos.add(ProductMapper.toDto(product));
+        }
+        return productDtos;
     }
 }
