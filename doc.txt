@@ -1,6 +1,8 @@
 Parfait 👍 Je vais t’analyser ton système pas à pas pour que tu comprennes **clairement** ce que fait ton code.
 Ton projet utilise **Spring Security + JWT** pour sécuriser une API.
 
+
+est
 ---
 
 ## 1. Classe `SecurityConfig`
