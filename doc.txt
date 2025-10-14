@@ -9,12 +9,6 @@ est
 
 C’est la **configuration de sécurité principale** de ton application.
 
-```java
-@Configuration
-public class SecurityConfig {
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-```
 
 👉 Ici, tu définis les règles de sécurité que Spring doit appliquer.
 
