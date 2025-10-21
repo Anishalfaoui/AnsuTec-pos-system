@@ -35,7 +35,7 @@ Chaque requête doit fournir un **JWT valide**.
 
 ➡️ Les règles :
 
-* `/api/**` → doit être authentifié (avoir un JWT valide).
+* `/api/**` → doit être authentifié (avoir un JWT valide).f"""'
 * `/api/super-admin/**` → doit être authentifié **et** avoir le rôle **ADMIN**.
 * Le reste (`anyRequest()`) → accessible à tout le monde.
 
