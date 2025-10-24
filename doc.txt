@@ -1,11 +1,7 @@
 
 ## 1. Classe `SecurityConfig`
 
-C’est la **configuration de sécurité principale** de ton application.
-
-
-👉 Ici, tu définis les règles de sécurité que Spring doit appliquer.
-
+C’est la **configuration de sécurité principale** de 
 ### a. Gestion des sessions
 
 ```java
